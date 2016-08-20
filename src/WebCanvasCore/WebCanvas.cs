@@ -99,11 +99,7 @@ namespace WebCanvasCore
             int messageKey = (int) MessageKey.SetFillStyle;
             string message = $"{messageKey},{style}";
 
-            if (BatchUpdateInProgress)
-            {
-                _messageBatch.Add(message);
-                return;
-            }
+            SendMessageToBrowserOrAddToBatch(message);
         }
 
         public void SetStrokeStyle(string style)
