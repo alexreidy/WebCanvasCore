@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+    <center>
+        <canvas id="canvas" width="750" height="500"></canvas>
+    </center>
+
+    <script type="text/javascript">
+
+    function Vector2(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    function WebCanvas(canvasId) {
+        var self = this;
+        this._canvasId = canvasId;
+        this._canvas = document.getElementById(canvasId);
+        this._ctx = this._canvas.getContext('2d');
+
+        this._absoluteMousePos = new Vector2(0, 0);
+
+        this._userDefinedOnMouseMoveCallback = function() {};
+        this._canvas.addEventListener('mousemove', function(event) {
+            self._absoluteMousePos = self._getAbsoluteMousePosFromEvent(event);
+            self._userDefinedOnMouseMoveCallback();
+        });
+
+        this._userDefinedOnMouseDownCallback = function() {};
+        this._canvas.addEventListener('mousedown', function(event) {
+            self._absoluteMousePos = self._getAbsoluteMousePosFromEvent(event);
+            self._userDefinedOnMouseDownCallback();
+        });
+
+        this._userDefinedOnMouseUpCallback = function() {};
+        this._canvas.addEventListener('mouseup', function(event) {
+            self._absoluteMousePos = self._getAbsoluteMousePosFromEvent(event);
+            self._userDefinedOnMouseUpCallback();
+        });
+
+        this._userDefinedOnClickCallback = function() {};
+        this._canvas.addEventListener('click', function(event) {
+            self._absoluteMousePos = self._getAbsoluteMousePosFromEvent(event);
+            self._userDefinedOnClickCallback();
+        });
+    }
+
+    WebCanvas.prototype.setSize = function(width, height) {
+        this._canvas.width = width;
+        this._canvas.height = height;
+    };
+
+    WebCanvas.prototype.width = function() { return this._canvas.width; };
+
+    WebCanvas.prototype.height = function() { return this._canvas.height; };
+
+    WebCanvas.prototype.setFillStyle = function(fillStyle) {
+        this._ctx.fillStyle = fillStyle;
+    };
+
+    WebCanvas.prototype.setStrokeStyle = function(strokeStyle) {
+        this._ctx.strokeStyle = strokeStyle;
+    };
+
+    WebCanvas.prototype.drawRect = function(x, y, width, height) {
+        this._ctx.fillRect(x, y, width, height);
+    };
+
+    WebCanvas.prototype.drawLine = function(pointA, pointB, width) {
+        this._ctx.lineWidth = width;
+        this._ctx.beginPath();
+        this._ctx.moveTo(pointA.x, pointA.y);
+        this._ctx.lineTo(pointB.x, pointB.y);
+        this._ctx.stroke();
+    };
+
+    WebCanvas.prototype._getAbsoluteMousePosFromEvent = function(event) {
+        return new Vector2(event.clientX, event.clientY);
+    };
+
+    WebCanvas.prototype.getAbsoluteMousePos = function() {
+        return this._absoluteMousePos;
+    };
+
+    WebCanvas.prototype.getRelativeMousePos = function() {
+        var rect = this._canvas.getBoundingClientRect();
+        return new Vector2(
+            this._absoluteMousePos.x - rect.left,
+            this._absoluteMousePos.y - rect.top);
+    };
+
+    WebCanvas.prototype.onClickPerform = function(action) {
+        this._userDefinedOnClickCallback = action;
+    };
+
+    WebCanvas.prototype.onMouseDownPerform = function(action) {
+        this._userDefinedOnMouseDownCallback = action;
+    };
+
+    WebCanvas.prototype.onMouseUpPerform = function(action) {
+        this._userDefinedOnMouseUpCallback = action;
+    };
+
+    WebCanvas.prototype.onMouseMovePerform = function(action) {
+        this._userDefinedOnMouseMoveCallback = action;
+    };
+
+    (function() {
+
+        var MessageKey = {
+            DRAW_RECT: 1,
+            DRAW_LINE: 2,
+            SET_FILL_STYLE: 3,
+            MOUSE_POSITION: 4,
+            SET_SIZE: 5,
+            SET_STROKE_STYLE: 6,
+        };
+
+        var canvas = new WebCanvas('canvas');
+
+        var channel = new WebSocket('ws://localhost:{%PORT%}');
+
+        var channelOpen = false;
+
+        channel.onopen = function() {
+            channelOpen = true;
+        };
+
+        channel.onmessage = function(event) {
+            var data = event.data;
+
+            var messages = data.split('|');
+            for (var i = 0; i < messages.length; i++) {
+                var message = messages[i];
+                var messageComponents = message.split(',');
+
+                var messageKey = parseInt(messageComponents[0]);
+                switch (messageKey) {
+                    case MessageKey.DRAW_RECT:
+                        var x = parseFloat(messageComponents[1]);
+                        var y = parseFloat(messageComponents[2]);
+                        var width = parseFloat(messageComponents[3]);
+                        var height = parseFloat(messageComponents[4]);
+                        canvas.drawRect(x, y, width, height);
+                        break;
+
+                    case MessageKey.DRAW_LINE:
+                        var pointA = new Vector2(parseFloat(messageComponents[1]), parseFloat(messageComponents[2]));
+                        var pointB = new Vector2(parseFloat(messageComponents[3]), parseFloat(messageComponents[4]));
+                        var width = parseFloat(messageComponents[5]);
+                        canvas.drawLine(pointA, pointB, width);
+                        break;
+
+                    case MessageKey.SET_FILL_STYLE:
+                        canvas.setFillStyle(messageComponents[1]);
+                        break;
+
+                    case MessageKey.SET_SIZE:
+                        canvas.setSize(parseInt(messageComponents[1]), parseInt(messageComponents[2]));
+                        break;
+
+                    case MessageKey.SET_STROKE_STYLE:
+                        canvas.setStrokeStyle(messageComponents[1]);
+                        break;
+                }
+            }
+
+        };
+
+        canvas.onMouseMovePerform(function() {
+            if (!channelOpen) return;
+
+            var mpos = canvas.getRelativeMousePos();
+            channel.send([MessageKey.MOUSE_POSITION, mpos.x, mpos.y].join(','));
+        });
+
+    })();
+        
+    </script>
+</html>
