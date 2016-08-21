@@ -13,20 +13,7 @@ namespace WebCanvasCore
 
         public Action OnWebSocketInitialized { get; set; } = () => {};
 
-        private WebSocket _socket;
-
-        private WebSocket Socket
-        {
-            get
-            {
-                return _socket;
-            }
-            set
-            {
-                _socket = value;
-                OnWebSocketInitialized();
-            }
-        }
+        private WebSocket Socket { get; set; }
 
         public async void SendMessage(string message)
         {
@@ -47,6 +34,7 @@ namespace WebCanvasCore
                 if (Socket == null)
                 {
                     Socket = await http.WebSockets.AcceptWebSocketAsync();
+                    OnWebSocketInitialized();
                 }
 
                 while (Socket.State == WebSocketState.Open)
@@ -71,12 +59,9 @@ namespace WebCanvasCore
         }
         
         public void Close()
-        {
-            if (Socket == null) return;
-            
-            Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+        {   
+            Socket?.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
         }
-
 
     }
 }

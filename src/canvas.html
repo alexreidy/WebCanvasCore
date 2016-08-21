@@ -107,12 +107,15 @@
     (function() {
 
         var MessageKey = {
-            DRAW_RECT: 1,
-            DRAW_LINE: 2,
-            SET_FILL_STYLE: 3,
-            MOUSE_POSITION: 4,
-            SET_SIZE: 5,
+            KEYBOARD_STATE_CHANGED: 1,
+            MOUSECLICK_STATE_CHANGED: 2,
+            MOUSE_POS: 3,
+
+            SET_CANVAS_SIZE: 4,
+            SET_FILL_STYLE: 5,
             SET_STROKE_STYLE: 6,
+            DRAW_RECT: 7,
+            DRAW_LINE: 8,
         };
 
         var canvas = new WebCanvas('canvas');
@@ -154,13 +157,14 @@
                         canvas.setFillStyle(messageComponents[1]);
                         break;
 
-                    case MessageKey.SET_SIZE:
-                        canvas.setSize(parseInt(messageComponents[1]), parseInt(messageComponents[2]));
-                        break;
-
                     case MessageKey.SET_STROKE_STYLE:
                         canvas.setStrokeStyle(messageComponents[1]);
                         break;
+
+                    case MessageKey.SET_CANVAS_SIZE:
+                        canvas.setSize(parseInt(messageComponents[1]), parseInt(messageComponents[2]));
+                        break;
+
                 }
             }
 
@@ -170,7 +174,7 @@
             if (!channelOpen) return;
 
             var mpos = canvas.getRelativeMousePos();
-            channel.send([MessageKey.MOUSE_POSITION, mpos.x, mpos.y].join(','));
+            channel.send([MessageKey.MOUSE_POS, mpos.x, mpos.y].join(','));
         });
 
     })();
