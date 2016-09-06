@@ -177,6 +177,20 @@
             channel.send([MessageKey.MOUSE_POS, mpos.x, mpos.y].join(','));
         });
 
+        var MOUSE_DOWN_MESSAGE = [MessageKey.MOUSECLICK_STATE_CHANGED, 1].join(',');
+        canvas.onMouseDownPerform(function() {
+            if (!channelOpen) return;
+
+            channel.send(MOUSE_DOWN_MESSAGE);
+        });
+
+        var MOUSE_UP_MESSAGE = [MessageKey.MOUSECLICK_STATE_CHANGED, 0].join(',');
+        canvas.onMouseUpPerform(function() {
+            if (!channelOpen) return;
+
+            channel.send(MOUSE_UP_MESSAGE);
+        });
+
     })();
         
     </script>

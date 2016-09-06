@@ -11,13 +11,15 @@ namespace WebCanvasCore
     {
         public Action<string> OnMessageReceived { get; set; } = (string s) => {};
 
-        public Action OnWebSocketInitialized { get; set; } = () => {};
+        public Action OnWebSocketOpen { get; set; } = () => {};
+
+        public Action OnWebSocketNoLongerOpen { get; set; } = () => {};
 
         private WebSocket Socket { get; set; }
 
         public async void SendMessage(string message)
         {
-            if (Socket == null) return;
+            if (Socket == null || Socket.State != WebSocketState.Open) return;
 
             byte[] data = Encoding.UTF8.GetBytes(message);
             await Socket.SendAsync(
@@ -34,7 +36,8 @@ namespace WebCanvasCore
                 if (Socket == null)
                 {
                     Socket = await http.WebSockets.AcceptWebSocketAsync();
-                    OnWebSocketInitialized();
+
+                    Task.Run(OnWebSocketOpen);
                 }
 
                 while (Socket.State == WebSocketState.Open)
@@ -45,12 +48,12 @@ namespace WebCanvasCore
                     if (received.MessageType == WebSocketMessageType.Text)
                     {
                         string message = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
-                        if (OnMessageReceived != null)
-                        {
-                            OnMessageReceived(message);
-                        }
+                        OnMessageReceived?.Invoke(message);
                     }
                 }
+
+                Socket = null;
+                Task.Run(OnWebSocketNoLongerOpen);
             }
             else
             {
