@@ -198,6 +198,14 @@ namespace WebCanvasCore
 
             channel.send(MOUSE_UP_MESSAGE);
         });
+        
+        document.onkeydown = function(event) {
+            channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 1]);
+        };
+
+        document.onkeyup = function(event) {
+            channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 0]);
+        };
 
     })();
         
