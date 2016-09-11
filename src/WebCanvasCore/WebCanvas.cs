@@ -11,7 +11,7 @@ namespace WebCanvasCore
     {
         KeyboardStateChanged = 1,
         MouseClickStateChanged = 2,
-        MousePos = 3,
+        MousePosition = 3,
 
         SetCanvasSize = 4,
         SetFillStyle = 5,
@@ -82,12 +82,12 @@ namespace WebCanvasCore
             html = html.Replace("{%PORT%}", $"{port}");
             
             return new WebCanvas(html, port,
-                onBrowserConnected: (WebCanvas canvas) =>
+                onBrowserConnected: canvas =>
                 {
                     canvas.CanRender = true;
                     onReadyToRender();
                 },
-                onBrowserDisconnected: (WebCanvas canvas) =>
+                onBrowserDisconnected: canvas =>
                 {
                     canvas.CanRender = false;
                 });
@@ -101,7 +101,7 @@ namespace WebCanvasCore
 
         public static WebCanvas InitUsingDefaultHtmlPage(int port, Action onReadyToRender)
         {
-            return InitUsingHtmlPage("", port, onReadyToRender);
+            return InitUsingHtmlPage(DefaultCanvasHtmlPage.Html, port, onReadyToRender);
         }
 
         public void Shutdown()
@@ -131,7 +131,7 @@ namespace WebCanvasCore
 
             switch (messageKey)
             {
-                case (int)MessageKey.MousePos:
+                case (int)MessageKey.MousePosition:
                     _mousePosition.X = float.Parse(components[1]);
                     _mousePosition.Y = float.Parse(components[2]);
                     break;
@@ -196,17 +196,17 @@ namespace WebCanvasCore
             _messageBatch = new List<string>();
         }
 
+        public void CancelUpdateBatch()
+        {
+            _messageBatch = null;
+        }
+
         public void ApplyUpdateBatch()
         {
             string message = string.Join("|", _messageBatch);
 
             SendMessageToBrowser(message);
             
-            _messageBatch = null;
-        }
-
-        public void CancelUpdateBatch()
-        {
             _messageBatch = null;
         }
 
