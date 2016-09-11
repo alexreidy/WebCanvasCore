@@ -77,7 +77,7 @@ namespace WebCanvasCore
             _serverThread.Start();
         }
 
-        public static WebCanvas InitUsingHtmlPage(string html, int port, Action onReadyToRender)
+        public static WebCanvas InitUsingHtmlPage(string html, int port, Action<WebCanvas> onReadyToRender)
         {
             html = html.Replace("{%PORT%}", $"{port}");
             
@@ -85,7 +85,7 @@ namespace WebCanvasCore
                 onBrowserConnected: canvas =>
                 {
                     canvas.CanRender = true;
-                    onReadyToRender();
+                    onReadyToRender(canvas);
                 },
                 onBrowserDisconnected: canvas =>
                 {
@@ -93,13 +93,13 @@ namespace WebCanvasCore
                 });
         }
 
-        public static WebCanvas InitUsingHtmlPageAtPath(string htmlPagePath, int port, Action onReadyToRender)
+        public static WebCanvas InitUsingHtmlPageAtPath(string htmlPagePath, int port, Action<WebCanvas> onReadyToRender)
         {
             string html = File.ReadAllText(htmlPagePath);
             return InitUsingHtmlPage(html, port, onReadyToRender);
         }
 
-        public static WebCanvas InitUsingDefaultHtmlPage(int port, Action onReadyToRender)
+        public static WebCanvas InitUsingDefaultHtmlPage(int port, Action<WebCanvas> onReadyToRender)
         {
             return InitUsingHtmlPage(DefaultCanvasHtmlPage.Html, port, onReadyToRender);
         }
