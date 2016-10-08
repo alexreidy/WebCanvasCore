@@ -9,11 +9,11 @@ namespace WebCanvasCore
 {
     internal class WebSocketMessageCenter
     {
-        public Action<string> OnMessageReceived { get; set; } = (string s) => {};
+        public event Action WebSocketOpen;
 
-        public Action OnWebSocketOpen { get; set; } = () => {};
+        public event Action WebSocketNoLongerOpen;
 
-        public Action OnWebSocketNoLongerOpen { get; set; } = () => {};
+        public event Action<string> MessageReceived;
 
         private WebSocket Socket { get; set; }
 
@@ -37,7 +37,11 @@ namespace WebCanvasCore
                 {
                     Socket = await http.WebSockets.AcceptWebSocketAsync();
 
-                    Task.Run(OnWebSocketOpen);
+                    var socketOpenEvent = WebSocketOpen;
+                    if (socketOpenEvent != null)
+                    {
+                        Task.Run(socketOpenEvent);
+                    }
                 }
 
                 while (Socket.State == WebSocketState.Open)
@@ -48,12 +52,18 @@ namespace WebCanvasCore
                     if (received.MessageType == WebSocketMessageType.Text)
                     {
                         string message = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
-                        OnMessageReceived?.Invoke(message);
+
+                        MessageReceived?.Invoke(message);
                     }
                 }
 
                 Socket = null;
-                Task.Run(OnWebSocketNoLongerOpen);
+                
+                var handler = WebSocketNoLongerOpen;
+                if (handler != null)
+                {
+                    Task.Run(handler);
+                }
             }
             else
             {

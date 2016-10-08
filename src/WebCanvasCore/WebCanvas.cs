@@ -60,9 +60,9 @@ namespace WebCanvasCore
         private WebCanvas(string canvasPageHtml, int port, Action<WebCanvas> onBrowserConnected, Action<WebCanvas> onBrowserDisconnected)
         {
             _browserChannel = new WebSocketMessageCenter();
-            _browserChannel.OnMessageReceived = HandleMessageFromBrowser;
-            _browserChannel.OnWebSocketOpen = () => { onBrowserConnected(this); };
-            _browserChannel.OnWebSocketNoLongerOpen = () => { onBrowserDisconnected(this); };
+            _browserChannel.MessageReceived += HandleMessageFromBrowser;
+            _browserChannel.WebSocketOpen += () => onBrowserConnected(this);
+            _browserChannel.WebSocketNoLongerOpen += () => onBrowserDisconnected(this);
 
             Startup.MessageCenter = _browserChannel;
             Startup.CanvasPageHtml = canvasPageHtml;
@@ -123,11 +123,10 @@ namespace WebCanvasCore
         }
 
         private void HandleMessageFromBrowser(string message)
-        {            
+        {
             string[] components = message.Split(',');
 
-            int messageKey;
-            if (!int.TryParse(components[0], out messageKey)) return;
+            int messageKey; int.TryParse(components[0], out messageKey);
 
             switch (messageKey)
             {
