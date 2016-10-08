@@ -37,10 +37,10 @@ namespace WebCanvasCore
                 {
                     Socket = await http.WebSockets.AcceptWebSocketAsync();
 
-                    var socketOpenEvent = WebSocketOpen;
-                    if (socketOpenEvent != null)
+                    var socketOpenHandler = WebSocketOpen;
+                    if (socketOpenHandler != null)
                     {
-                        Task.Run(socketOpenEvent);
+                        Task.Run(socketOpenHandler);
                     }
                 }
 

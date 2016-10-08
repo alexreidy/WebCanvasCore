@@ -57,15 +57,26 @@ namespace WebCanvasCore
 
         public bool CanRender { get; private set; }
 
-        private WebCanvas(string canvasPageHtml, int port, Action<WebCanvas> onBrowserConnected, Action<WebCanvas> onBrowserDisconnected)
+        public WebCanvas()
+        {
+        }
+
+        public void RunServingHtmlPage(string html, int port, Action onReadyToRender)
         {
             _browserChannel = new WebSocketMessageCenter();
             _browserChannel.MessageReceived += HandleMessageFromBrowser;
-            _browserChannel.WebSocketOpen += () => onBrowserConnected(this);
-            _browserChannel.WebSocketNoLongerOpen += () => onBrowserDisconnected(this);
+            _browserChannel.WebSocketOpen += () =>
+            {
+                CanRender = true;
+                onReadyToRender();
+            };
+            _browserChannel.WebSocketNoLongerOpen += () =>
+            {
+                CanRender = false;
+            };
 
             Startup.MessageCenter = _browserChannel;
-            Startup.CanvasPageHtml = canvasPageHtml;
+            Startup.CanvasPageHtml = html.Replace("{%PORT%}", $"{port}");
 
             _host = new WebHostBuilder()
                 .UseKestrel()
@@ -77,31 +88,14 @@ namespace WebCanvasCore
             _serverThread.Start();
         }
 
-        public static WebCanvas InitUsingHtmlPage(string html, int port, Action<WebCanvas> onReadyToRender)
+        public void RunServingHtmlPageAtPath(string htmlPagePath, int port, Action onReadyToRender)
         {
-            html = html.Replace("{%PORT%}", $"{port}");
-            
-            return new WebCanvas(html, port,
-                onBrowserConnected: canvas =>
-                {
-                    canvas.CanRender = true;
-                    onReadyToRender(canvas);
-                },
-                onBrowserDisconnected: canvas =>
-                {
-                    canvas.CanRender = false;
-                });
+            RunServingHtmlPage(File.ReadAllText(htmlPagePath), port, onReadyToRender);
         }
 
-        public static WebCanvas InitUsingHtmlPageAtPath(string htmlPagePath, int port, Action<WebCanvas> onReadyToRender)
+        public void RunServingDefaultHtmlPage(int port, Action onReadyToRender)
         {
-            string html = File.ReadAllText(htmlPagePath);
-            return InitUsingHtmlPage(html, port, onReadyToRender);
-        }
-
-        public static WebCanvas InitUsingDefaultHtmlPage(int port, Action<WebCanvas> onReadyToRender)
-        {
-            return InitUsingHtmlPage(DefaultCanvasHtmlPage.Html, port, onReadyToRender);
+            RunServingHtmlPage(DefaultCanvasHtmlPage.Html, port, onReadyToRender);
         }
 
         public void Shutdown()
@@ -113,7 +107,7 @@ namespace WebCanvasCore
 
         private void SendMessageToBrowser(string message)
         {
-            _browserChannel.SendMessage(message);
+            _browserChannel?.SendMessage(message);
         }
 
         private void SendMessageToBrowserOrAddToBatch(string message)

@@ -9,19 +9,20 @@ namespace ConsoleApplication
         public static void Main(string[] args)
         {
             bool running = true;
-
             Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs a) =>
-            {
                 running = false;
-            };
 
-            // If a browser disconnects then reconnects, your onReadyToRender callback will be called again.
-            WebCanvas c = WebCanvas.InitUsingDefaultHtmlPage(8442, onReadyToRender: canvas =>
+            // You don't have to worry about canvas going out of scope and being eaten by the GC.
+            var canvas = new WebCanvas();
+
+            canvas.RunServingDefaultHtmlPage(8442, onReadyToRender: () =>
             {
+                // If a browser disconnects then reconnects, onReadyToRender will be called again.
+
                 var rng = new Random();
 
                 const int Width = 1000, Height = 800;
-                canvas.SetSize(Width, Height);                
+                canvas.SetSize(Width, Height);
 
                 while (running && canvas.CanRender)
                 {
@@ -53,7 +54,6 @@ namespace ConsoleApplication
                 if (!canvas.CanRender)
                     Console.WriteLine("This probably means there's no browser connected right now");
             });
-            
         }
     }
 }
