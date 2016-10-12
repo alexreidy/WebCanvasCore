@@ -69,6 +69,10 @@ namespace WebCanvasCore
         this._ctx.strokeStyle = strokeStyle;
     };
 
+    WebCanvas.prototype.setFont = function(font) {
+        this._ctx.font = font;
+    };
+
     WebCanvas.prototype.drawRect = function(x, y, width, height) {
         this._ctx.fillRect(x, y, width, height);
     };
@@ -79,6 +83,10 @@ namespace WebCanvasCore
         this._ctx.moveTo(pointA.x, pointA.y);
         this._ctx.lineTo(pointB.x, pointB.y);
         this._ctx.stroke();
+    };
+
+    WebCanvas.prototype.drawText = function(text, x, y) {
+        this._ctx.fillText(text, x, y);
     };
 
     WebCanvas.prototype._getAbsoluteMousePosFromEvent = function(event) {
@@ -112,6 +120,22 @@ namespace WebCanvasCore
         this._userDefinedOnMouseMoveCallback = action;
     };
 
+    function splitstr(text, delimChar, substringLimit) {
+        var substrings = [];
+        var substr = '';
+        for (var i = 0; i < text.length; i++) {
+            var c = text[i];
+            if (c == delimChar && substrings.length + 1 < substringLimit) {
+                substrings.push(substr);
+                substr = '';
+                continue;
+            }
+            substr += c;
+        }
+        substrings.push(substr);
+        return substrings;
+    }
+
     (function() {
 
         var MessageKey = {
@@ -124,6 +148,8 @@ namespace WebCanvasCore
             SET_STROKE_STYLE: 6,
             DRAW_RECT: 7,
             DRAW_LINE: 8,
+            DRAW_TEXT: 9,
+            SET_FONT: 10,
         };
 
         var canvas = new WebCanvas('canvas');
@@ -161,12 +187,24 @@ namespace WebCanvasCore
                         canvas.drawLine(pointA, pointB, width);
                         break;
 
+                    case MessageKey.DRAW_TEXT:
+                        var messageComps = splitstr(message, ',', 4);
+                        var text = messageComps[3];
+                        var x = parseFloat(messageComps[1]);
+                        var y = parseFloat(messageComps[2]);
+                        canvas.drawText(text, x, y);
+                        break;
+
                     case MessageKey.SET_FILL_STYLE:
                         canvas.setFillStyle(messageComponents[1]);
                         break;
 
                     case MessageKey.SET_STROKE_STYLE:
                         canvas.setStrokeStyle(messageComponents[1]);
+                        break;
+
+                    case MessageKey.SET_FONT:
+                        canvas.setFont(messageComponents[1]);
                         break;
 
                     case MessageKey.SET_CANVAS_SIZE:
@@ -199,11 +237,11 @@ namespace WebCanvasCore
             channel.send(MOUSE_UP_MESSAGE);
         });
         
-        document.onkeydown = function(event) {
+        window.onkeydown = function(event) {
             channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 1]);
         };
 
-        document.onkeyup = function(event) {
+        window.onkeyup = function(event) {
             channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 0]);
         };
 
