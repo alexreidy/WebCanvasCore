@@ -228,13 +228,22 @@
 
             channel.send(MOUSE_UP_MESSAGE);
         });
+
+        // The index is the key code.
+        var keyIsDown = new Array(999).fill(false);
         
         window.onkeydown = function(event) {
-            channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 1]);
+            // We don't want to barrage the server with redundant messages,
+            // so don't send if the key is already known to be down.
+            if (!keyIsDown[event.keyCode]) {
+                channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 1]);
+                keyIsDown[event.keyCode] = true;
+            }
         };
 
         window.onkeyup = function(event) {
             channel.send([MessageKey.KEYBOARD_STATE_CHANGED, event.keyCode, 0]);
+            keyIsDown[event.keyCode] = false;
         };
 
     })();
